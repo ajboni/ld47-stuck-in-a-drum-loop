@@ -59,8 +59,6 @@
     window.location.reload();
   }
 
-  function endGame() {}
-
   function toggleSandboxMode() {
     if (GAME_MODE === "sandbox") GAME_MODE = "normal";
     else GAME_MODE = "sandbox";
