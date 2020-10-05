@@ -1,25 +1,35 @@
 <script>
   import { Channel, Loop, Player, Transport } from "tone";
-  import { settings } from "./settings.js";
+  import {
+    BPM,
+    COLLECTED_PRIZES,
+    endGame,
+    gameState,
+    GAME_STARTED,
+    settings,
+  } from "./settings.js";
   import { playInstrumentAt } from "./engine";
   import { Tone } from "tone/build/esm/core/Tone";
   import MixerWidget from "./Mixer.svelte";
 
+  var qeuedPlayerMovement = "";
+
   document.onkeydown = processKey;
   function processKey(e) {
+    if (!$GAME_STARTED) return;
     e = e || window.event;
     if (e.keyCode == "38") {
       // up arrow
-      movePlayer("up");
+      qeuedPlayerMovement = "up";
     } else if (e.keyCode == "40") {
       // down arrow
-      movePlayer("down");
+      qeuedPlayerMovement = "down";
     } else if (e.keyCode == "37") {
-      movePlayer("left");
+      qeuedPlayerMovement = "left";
 
       // left arrow
     } else if (e.keyCode == "39") {
-      movePlayer("right");
+      qeuedPlayerMovement = "right";
     }
   }
 
@@ -29,7 +39,7 @@
     bongo: new Channel(0, -0.5).toDestination(),
     hats: new Channel(-6, -0.2).toDestination(),
     maracas: new Channel(-10, 0.5).toDestination(),
-    cymbals: new Channel(-6, 0).toDestination(),
+    cymbals: new Channel(-10, -0.8).toDestination(),
     cowbell: new Channel(-20, 0.5).toDestination(),
   };
 
@@ -45,6 +55,9 @@
   const bongo3 = new Player("snd/bongo3.wav").connect(Mixer.bongo.input);
   const bongo4 = new Player("snd/bongo4.wav").connect(Mixer.bongo.input);
   const crash = new Player("snd/crash.wav").connect(Mixer.cymbals.input);
+  const triangle = new Player("snd/triangle.wav").connect(Mixer.cymbals.input);
+  const bell = new Player("snd/bell.wav").connect(Mixer.cymbals.input);
+  const ride = new Player("snd/ride.wav").connect(Mixer.cymbals.input);
 
   const { MAX_STEPS } = settings;
 
@@ -61,10 +74,18 @@
     player: { enabled: false, items: [], icon: "X" },
   };
 
+  //   substract pkayer and prize track
+  gameState.TOTAL_TRACKS = Object.keys(tracks).length - 2;
+
   /* Initialize Tracks */
   for (let index = 0; index < MAX_STEPS; index++) {
     Object.keys(tracks).forEach((key) => {
-      tracks[key].items.push({ class: "", hasPlayer: false, hasPrize: false });
+      tracks[key].items.push({
+        class: "",
+        hasPlayer: false,
+        hasPrize: false,
+        prizeIcon: null,
+      });
     });
   }
 
@@ -77,17 +98,23 @@
     placePrize(prize);
   });
 
+  tracks.prizes.items.forEach((i) => {
+    if (!i.hasPrize) {
+      i.class = "wall";
+    }
+  });
+
   function placePrize(prize) {
-    const index = Math.floor(Math.random() * MAX_STEPS - 1);
+    const index = randomRange(2, MAX_STEPS - 2);
+
     if (!tracks.prizes.items[index]) placePrize(prize);
     if (tracks.prizes.items[index].hasPrize) placePrize(prize);
     else {
       tracks.prizes.items[index].hasPrize = true;
+      tracks.prizes.items[index].prizeIcon = tracks[prize].icon;
+      tracks.prizes.items[index].prizeName = prize;
     }
   }
-
-  /* Player */
-  //   tracks.player.items[MAX_STEPS / 2] = `player`;
 
   const player = {
     position: {
@@ -97,14 +124,22 @@
   };
 
   function movePlayer(direction) {
+    if (!$GAME_STARTED) return;
+    if (direction) console.log(direction);
+
     if (direction === "left") {
+      if (!getTrackStepFromPlayer(-1)) return;
+      if (getTrackStepFromPlayer(-1).class === "wall") return;
       if (player.position.step > 1) {
         getTrackStepFromPlayer().hasPlayer = false;
+
         player.position.step -= 1;
       }
     }
 
     if (direction === "right") {
+      if (!getTrackStepFromPlayer(1)) return;
+      if (getTrackStepFromPlayer(1).class === "wall") return;
       if (player.position.step < MAX_STEPS - 2) {
         getTrackStepFromPlayer().hasPlayer = false;
         player.position.step += 1;
@@ -112,12 +147,16 @@
     }
 
     if (direction === "up") {
+      if (!getTrackStepFromPlayer(0, -1)) return;
+      if (getTrackStepFromPlayer(0, -1).class === "wall") return;
       if (player.position.track > 0) {
         getTrackStepFromPlayer().hasPlayer = false;
         player.position.track -= 1;
       }
     }
     if (direction === "down") {
+      if (!getTrackStepFromPlayer(0, 1)) return;
+      if (getTrackStepFromPlayer(0, 1).class === "wall") return;
       if (player.position.track < Object.keys(tracks).length - 1) {
         getTrackStepFromPlayer().hasPlayer = false;
 
@@ -127,8 +166,10 @@
     renderPlayer();
   }
 
-  function getTrackStepFromPlayer(stepOffset = 0) {
-    return Object.values(tracks)[player.position.track].items[
+  function getTrackStepFromPlayer(stepOffset = 0, trackOffset = 0) {
+    if (!Object.values(tracks)[player.position.track + trackOffset])
+      return null;
+    return Object.values(tracks)[player.position.track + trackOffset].items[
       player.position.step + stepOffset
     ];
   }
@@ -137,6 +178,36 @@
     Object.values(tracks)[player.position.track].items[
       player.position.step
     ].hasPlayer = true;
+  }
+
+  function getCollisions() {
+    if (getTrackStepFromPlayer().class === "filled") {
+      console.log("collision");
+      endGame("lose");
+    }
+
+    /* Get Prize */
+    if (getTrackStepFromPlayer().hasPrize) {
+      getTrackStepFromPlayer().hasPrize = false;
+      getTrackStepFromPlayer().hasPlayer = false;
+      getTrackStepFromPlayer().class = "wall";
+      toggleTrack(getTrackStepFromPlayer().prizeName);
+
+      $COLLECTED_PRIZES++;
+      player.position.track = Object.keys(tracks).length - 1;
+      player.position.step = randomRange(2, MAX_STEPS);
+      $BPM += 5;
+      Transport.bpm.value = $BPM;
+
+      if ($COLLECTED_PRIZES === gameState.TOTAL_TRACKS) {
+        endGame("win");
+      }
+    }
+  }
+
+  // Function to generate random number
+  function randomRange(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
   }
 
   renderPlayer();
@@ -158,7 +229,8 @@
       }
 
       getTrackStepFromPlayer(offset).hasPlayer = true;
-      //   }
+
+      getCollisions();
     }
 
     tickDrums(time);
@@ -284,6 +356,18 @@
     });
 
     playInstrumentAt({
+      instrument: [null, triangle, bell, ride],
+      bars: [1, 2, 3, 4],
+      beats: [3],
+      sixteenths: [0],
+      time: time,
+      trackName: "cymbals",
+      mode: "sample",
+      tracks: tracks,
+      combine: true,
+    });
+
+    playInstrumentAt({
       instrument: cowbell,
       bars: [1, 3],
       beats: [1],
@@ -307,6 +391,8 @@
       combine: false,
     });
 
+    movePlayer(qeuedPlayerMovement);
+    qeuedPlayerMovement = null;
     tracks = tracks;
   }
 </script>
@@ -317,6 +403,7 @@
   <div class="track">
     {#each item.items as i}
       <div class="track-item {i.class} {i.hasPrize ? 'prize' : ''}">
+        {#if i.hasPrize}<span>{i.prizeIcon}</span>{/if}
         {#if i.hasPlayer}
           <div id="player" />
         {/if}
@@ -325,4 +412,4 @@
   </div>
 {/each}
 
-<MixerWidget channels={Mixer} {settings} />
+<MixerWidget channels={Mixer} />
