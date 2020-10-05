@@ -3,34 +3,41 @@
   import Drums from "./Drums.svelte";
   //   import Keys from "./Keys.svelte";
   export const name = "";
-  let t = "";
+  let t = "stopped";
 
   Transport.loop = true;
   Transport.loopStart = "0:0:0";
   Transport.loopEnd = "4:0:0";
 
-  //create a synth and connect it to the main output (your speakers)
-  const synth = new Synth().toDestination();
-
-  //play a middle 'C' for the duration of an 8th note
-  synth.triggerAttackRelease("C4", "8n");
-
   let drumsCp;
   let keysCp;
+
+  // schedule an event on the 16th measure
+  Transport.scheduleRepeat((time) => {
+    t = Transport.position;
+  }, "16n");
+
+  function toggleTransport() {
+    if (Transport.state !== "started") {
+      Transport.start();
+    } else {
+      Transport.pause();
+    }
+  }
 </script>
 
 <main>
   <h1>Stuck in a loop...</h1>
   {t}
-  <button
-    on:click={() => {
-      Transport.start();
-    }}>Start Engine</button>
+  <button on:click={toggleTransport}>Play/Pause</button>
+  <button on:click={() => drumsCp.toggleAllTracks()}>Play All</button>
   <button on:click={() => drumsCp.toggleTrack('kick')}>Bass Drum</button>
   <button on:click={() => drumsCp.toggleTrack('snare')}>Snare</button>
   <button on:click={() => drumsCp.toggleTrack('hats')}>Hats</button>
+  <button on:click={() => drumsCp.toggleTrack('bongo')}>Bongo</button>
+  <button on:click={() => drumsCp.toggleTrack('cymbals')}>Cymbals</button>
   <button on:click={() => drumsCp.toggleTrack('piano')}>Piano</button>
-  c
+
   <Drums bind:this={drumsCp} />
   <!-- <Keys bind:this={keysCp} /> -->
 </main>

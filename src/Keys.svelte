@@ -1,6 +1,6 @@
-<!--<script>
+<script>
   import * as Tone from "tone";
-  import { SampleLibrary } from "../tonejs-instruments/Tonejs-Instruments.js";
+  //   import { SampleLibrary } from "../tonejs-instruments/Tonejs-Instruments.js";
   import { Loop, Player } from "tone";
   import { settings } from "./settings.js";
   import { playInstrumentAt } from "./engine";
@@ -45,4 +45,4 @@
     );
     tracks = tracks;
   }
-</script>-->
+</script>

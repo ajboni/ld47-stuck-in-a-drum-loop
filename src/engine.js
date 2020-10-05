@@ -1,6 +1,4 @@
 import * as Tone from "tone";
-import { Sampler } from "tone";
-
 import { settings } from "./settings.js";
 const { MAX_STEPS } = settings;
 
@@ -57,7 +55,16 @@ export function playInstrumentAt({
       trackValue = "filled";
 
       if (mode === "instrument") instrument.triggerAttack("A3");
-      if (mode === "sample") instrument.start(time);
+      if (mode === "sample") {
+        if (instrument.length > 0) {
+          instrument =
+            instrument[Math.floor(Math.random() * instrument.length + 1)];
+        }
+        if (instrument) instrument.start(time);
+        else {
+          trackValue = "";
+        }
+      }
     }
   }
 
