@@ -3,6 +3,7 @@
   import {
     BPM,
     COLLECTED_PRIZES,
+    DARK_MODE,
     gameState,
     GAME_RESULT,
     GAME_STARTED,
@@ -69,13 +70,17 @@
     $SHOW_MIXER = !$SHOW_MIXER;
   }
 
+  function toggleDarkMode() {
+    $DARK_MODE = !$DARK_MODE;
+  }
+
   function setBPM(e) {
     $BPM = e.target.value;
     Transport.bpm.value = $BPM;
   }
 </script>
 
-<main>
+<main class:dark={$DARK_MODE}>
   {#if $SHOW_END_MODAL}
     <div id="myModal" class="modal">
       <!-- Modal content -->
@@ -100,7 +105,9 @@
     Each time a new drum part is collected its associated track starts playing
     and the beat gets faster.
     <br />
-    Use Arrow Keys to move.
+    Press
+    <strong>start game</strong>
+    and use Arrow Keys to move.
     <strong>Good Luck!</strong>
   </p>
   <div class="game-buttons">
@@ -110,7 +117,9 @@
       on:click={startGame}>Start Game</button>
     <button on:click={toggleMixer}>Toggle Mixer</button>
     <button on:click={toggleSandboxMode}>Toggle Sandbox Mode</button>
+    <button on:click={toggleDarkMode}>Toggle Dark Mode</button>
   </div>
+
   <div class="info-bar">
     <span>Time: {t}</span>
     <span>BPM: {$BPM}</span>

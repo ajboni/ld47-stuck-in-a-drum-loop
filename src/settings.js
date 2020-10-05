@@ -17,6 +17,8 @@ export let GAME_RESULT = writable({
   outcome: "YOU LOSE!",
   collectedPrizes: 0,
 });
+
+export let DARK_MODE = writable(true);
 export let BPM = writable(100);
 
 export function restartGameState() {

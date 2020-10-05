@@ -65,12 +65,12 @@
     prizes: { enabled: false, items: [] },
     snare: { enabled: false, items: [], icon: "s" },
     bongo: { enabled: false, items: [], icon: "b" },
-    hats: { enabled: false, items: [], icon: "hh" },
+    hats: { enabled: false, items: [], icon: "h" },
     kick: { channel: Mixer.kick, enabled: false, items: [], icon: "k" },
 
     maracas: { enabled: false, items: [], icon: "m" },
     cymbals: { enabled: false, items: [], icon: "c" },
-    cowbell: { enabled: false, items: [], icon: "cb" },
+    cowbell: { enabled: false, items: [], icon: "w" },
     player: { enabled: false, items: [], icon: "X" },
   };
 
@@ -397,19 +397,19 @@
   }
 </script>
 
-<h1>Drums</h1>
-
-{#each Object.values(tracks) as item}
-  <div class="track">
-    {#each item.items as i}
-      <div class="track-item {i.class} {i.hasPrize ? 'prize' : ''}">
-        {#if i.hasPrize}<span>{i.prizeIcon}</span>{/if}
-        {#if i.hasPlayer}
-          <div id="player" />
-        {/if}
-      </div>
-    {/each}
-  </div>
-{/each}
+<div class="track-container">
+  {#each Object.values(tracks) as item}
+    <div class="track">
+      {#each item.items as i}
+        <div class="track-item {i.class} {i.hasPrize ? 'prize' : ''}">
+          {#if i.hasPrize}<span>{i.prizeIcon}</span>{/if}
+          {#if i.hasPlayer}
+            <div id="player" />
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/each}
+</div>
 
 <MixerWidget channels={Mixer} />
