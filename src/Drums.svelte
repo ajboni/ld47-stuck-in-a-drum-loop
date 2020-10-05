@@ -5,53 +5,167 @@
   import { Tone } from "tone/build/esm/core/Tone";
   import MixerWidget from "./Mixer.svelte";
 
+  document.onkeydown = processKey;
+  function processKey(e) {
+    e = e || window.event;
+    if (e.keyCode == "38") {
+      // up arrow
+      movePlayer("up");
+    } else if (e.keyCode == "40") {
+      // down arrow
+      movePlayer("down");
+    } else if (e.keyCode == "37") {
+      movePlayer("left");
+
+      // left arrow
+    } else if (e.keyCode == "39") {
+      movePlayer("right");
+    }
+  }
+
   const Mixer = {
     kick: new Channel(-6, 0).toDestination(),
-    hats: new Channel(-6, 0),
-    snare: new Channel(-6, 0),
-    bongo: new Channel(-6, 0),
-    cymbals: new Channel(-6, 0),
-    cowbell: new Channel(-6, 0),
+    snare: new Channel(-2, 0.2).toDestination(),
+    bongo: new Channel(0, -0.5).toDestination(),
+    hats: new Channel(-6, -0.2).toDestination(),
+    maracas: new Channel(-10, 0.5).toDestination(),
+    cymbals: new Channel(-6, 0).toDestination(),
+    cowbell: new Channel(-20, 0.5).toDestination(),
   };
 
   const kick = new Player("snd/kick.wav").connect(Mixer.kick.input);
   const kick2 = new Player("snd/kick.wav").connect(Mixer.kick.input);
   const kick3 = new Player("snd/kick.wav").connect(Mixer.kick.input);
-  const hats = new Player("snd/hats.wav").toDestination();
-  const hats2 = new Player("snd/hats.wav").toDestination();
-  const snare = new Player("snd/snare.wav").toDestination();
-  const bongo1 = new Player("snd/bongo1.wav").toDestination();
-  const bongo2 = new Player("snd/bongo2.wav").toDestination();
-  const bongo3 = new Player("snd/bongo3.wav").toDestination();
-  const bongo4 = new Player("snd/bongo4.wav").toDestination();
-  const crash = new Player("snd/crash.wav").toDestination();
-  const cowbell = new Player("snd/cowbell.wav").toDestination();
+  const hats = new Player("snd/hats.wav").connect(Mixer.hats.input);
+  const maracas = new Player("snd/maraca.wav").connect(Mixer.maracas.input);
+  const cowbell = new Player("snd/cowbell.wav").connect(Mixer.cowbell.input);
+  const snare = new Player("snd/snare.wav").connect(Mixer.snare.input);
+  const bongo1 = new Player("snd/bongo1.wav").connect(Mixer.bongo.input);
+  const bongo2 = new Player("snd/bongo2.wav").connect(Mixer.bongo.input);
+  const bongo3 = new Player("snd/bongo3.wav").connect(Mixer.bongo.input);
+  const bongo4 = new Player("snd/bongo4.wav").connect(Mixer.bongo.input);
+  const crash = new Player("snd/crash.wav").connect(Mixer.cymbals.input);
+
   const { MAX_STEPS } = settings;
 
-  let tracks = {
-    kick: { channel: Mixer.kick, enabled: false, items: [] },
-    hats: { enabled: false, items: [] },
-    snare: { enabled: false, items: [] },
-    bongo: { enabled: false, items: [] },
-    cymbals: { enabled: false, items: [] },
-    cowbell: { enabled: false, items: [] },
+  export let tracks = {
+    prizes: { enabled: false, items: [] },
+    snare: { enabled: false, items: [], icon: "s" },
+    bongo: { enabled: false, items: [], icon: "b" },
+    hats: { enabled: false, items: [], icon: "hh" },
+    kick: { channel: Mixer.kick, enabled: false, items: [], icon: "k" },
+
+    maracas: { enabled: false, items: [], icon: "m" },
+    cymbals: { enabled: false, items: [], icon: "c" },
+    cowbell: { enabled: false, items: [], icon: "cb" },
+    player: { enabled: false, items: [], icon: "X" },
   };
 
+  /* Initialize Tracks */
   for (let index = 0; index < MAX_STEPS; index++) {
     Object.keys(tracks).forEach((key) => {
-      tracks[key].items.push("");
+      tracks[key].items.push({ class: "", hasPlayer: false, hasPrize: false });
     });
   }
 
+  /* Prizes */
+  const prizes = Object.keys(tracks).filter(
+    (x) => x !== "player" && x !== "prizes"
+  );
+
+  prizes.forEach((prize) => {
+    placePrize(prize);
+  });
+
+  function placePrize(prize) {
+    const index = Math.floor(Math.random() * MAX_STEPS - 1);
+    if (!tracks.prizes.items[index]) placePrize(prize);
+    if (tracks.prizes.items[index].hasPrize) placePrize(prize);
+    else {
+      tracks.prizes.items[index].hasPrize = true;
+    }
+  }
+
+  /* Player */
+  //   tracks.player.items[MAX_STEPS / 2] = `player`;
+
+  const player = {
+    position: {
+      track: Object.keys(tracks).length - 1,
+      step: MAX_STEPS / 2,
+    },
+  };
+
+  function movePlayer(direction) {
+    if (direction === "left") {
+      if (player.position.step > 1) {
+        getTrackStepFromPlayer().hasPlayer = false;
+        player.position.step -= 1;
+      }
+    }
+
+    if (direction === "right") {
+      if (player.position.step < MAX_STEPS - 2) {
+        getTrackStepFromPlayer().hasPlayer = false;
+        player.position.step += 1;
+      }
+    }
+
+    if (direction === "up") {
+      if (player.position.track > 0) {
+        getTrackStepFromPlayer().hasPlayer = false;
+        player.position.track -= 1;
+      }
+    }
+    if (direction === "down") {
+      if (player.position.track < Object.keys(tracks).length - 1) {
+        getTrackStepFromPlayer().hasPlayer = false;
+
+        player.position.track += 1;
+      }
+    }
+    renderPlayer();
+  }
+
+  function getTrackStepFromPlayer(stepOffset = 0) {
+    return Object.values(tracks)[player.position.track].items[
+      player.position.step + stepOffset
+    ];
+  }
+
+  function renderPlayer() {
+    Object.values(tracks)[player.position.track].items[
+      player.position.step
+    ].hasPlayer = true;
+  }
+
+  renderPlayer();
+
   // schedule an event on the 16th measure
   Transport.scheduleRepeat((time) => {
+    if (player.position.step > 0) {
+      //   if (
+      //     player.position.track > 0 &&
+      //     player.position.track > Object.keys(tracks).length - 1
+      //   ) {
+      getTrackStepFromPlayer().hasPlayer = false;
+      let offset = -1;
+      if (
+        player.position.track === 0 ||
+        player.position.track === Object.keys(tracks).length - 1
+      ) {
+        offset = 0;
+      }
+
+      getTrackStepFromPlayer(offset).hasPlayer = true;
+      //   }
+    }
+
     tickDrums(time);
   }, "16n");
 
   export function toggleTrack(trackName) {
     tracks[trackName].enabled = !tracks[trackName].enabled;
-    console.log(Mixer.kick.volume.value);
-    Mixer.kick.volume.value -= 1;
   }
 
   export function toggleAllTracks() {
@@ -181,6 +295,18 @@
       combine: false,
     });
 
+    playInstrumentAt({
+      instrument: maracas,
+      bars: [],
+      beats: [],
+      sixteenths: [2, 3],
+      time: time,
+      trackName: "maracas",
+      mode: "sample",
+      tracks: tracks,
+      combine: false,
+    });
+
     tracks = tracks;
   }
 </script>
@@ -190,9 +316,13 @@
 {#each Object.values(tracks) as item}
   <div class="track">
     {#each item.items as i}
-      <div class="track-item {i}" />
+      <div class="track-item {i.class} {i.hasPrize ? 'prize' : ''}">
+        {#if i.hasPlayer}
+          <div id="player" />
+        {/if}
+      </div>
     {/each}
   </div>
 {/each}
 
-<MixerWidget channels={Mixer} />
+<MixerWidget channels={Mixer} {settings} />

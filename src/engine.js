@@ -31,7 +31,7 @@ export function playInstrumentAt({
     beat: parseInt(Tone.Transport.position.split(":")[1]),
     sixteenth: parseInt(Tone.Transport.position.split(":")[2]),
   };
-  let trackValue = "";
+  let trackClass = "";
   let trackItem = tracks[trackName];
 
   if (bars === "*" || bars.length === 0) bars = [0, 1, 2, 3];
@@ -49,10 +49,10 @@ export function playInstrumentAt({
       sixteenths.includes(t.sixteenth)
     ) {
       if (combine) {
-        tracks[trackName].items[0] = "filled";
+        tracks[trackName].items[0].class = "filled";
       }
 
-      trackValue = "filled";
+      trackClass = "filled";
 
       if (mode === "instrument") instrument.triggerAttack("A3");
       if (mode === "sample") {
@@ -62,14 +62,14 @@ export function playInstrumentAt({
         }
         if (instrument) instrument.start(time);
         else {
-          trackValue = "";
+          trackClass = "";
         }
       }
     }
   }
 
   if (!combine) {
-    trackItem.items = [trackValue, ...trackItem.items];
+    trackItem.items = [{ class: trackClass }, ...trackItem.items];
     tracks[trackName] = trackItem;
   }
 }
