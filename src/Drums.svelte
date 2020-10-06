@@ -31,6 +31,7 @@
     } else if (e.keyCode == "39") {
       qeuedPlayerMovement = "right";
     }
+    return false;
   }
 
   const Mixer = {
@@ -196,7 +197,7 @@
       $COLLECTED_PRIZES++;
       player.position.track = Object.keys(tracks).length - 1;
       player.position.step = randomRange(2, MAX_STEPS);
-      $BPM += 5;
+      $BPM += 7;
       Transport.bpm.value = $BPM;
 
       if ($COLLECTED_PRIZES === gameState.TOTAL_TRACKS) {
